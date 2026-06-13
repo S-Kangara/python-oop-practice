@@ -1,31 +1,51 @@
 # ================================
-# Topic 02 — Bank Account
+# Topic 03 — Bank Account
 # ================================
-# New concepts: class variables, employee_count pattern
-# Added: interest_rate (shared), account_count (tracks total)
+# New concepts: @classmethod, @staticmethod
+# Added: from_string() constructor, is_valid_amount() utility
 # ================================
 
 
 class BankAccount:
 
-    interest_rate  = 0.03   # class variable — same for all accounts
-    account_count  = 0      # class variable — tracks total accounts created
+    interest_rate = 0.03
+    account_count = 0
 
     def __init__(self, owner, balance=0):
         self.owner   = owner
         self.balance = balance
-        BankAccount.account_count += 1   # increment every time a new account is created
+        BankAccount.account_count += 1
+
+    # --- Alternative constructor ---
+    # Creates a BankAccount from a string like "Kamal:5000"
+    @classmethod
+    def from_string(cls, account_str):
+        owner, balance = account_str.split(':')
+        return cls(owner, int(balance))
+
+    # --- Class-level rate update ---
+    # Updates interest rate for all accounts
+    @classmethod
+    def set_interest_rate(cls, rate):
+        cls.interest_rate = rate
+        print(f"  ~ Interest rate updated to {rate * 100}%")
+
+    # --- Utility function ---
+    # Checks if an amount is valid — doesn't need self or cls
+    @staticmethod
+    def is_valid_amount(amount):
+        return isinstance(amount, (int, float)) and amount > 0
 
     def deposit(self, amount):
-        if amount <= 0:
-            print("  ! Amount must be greater than 0.")
+        if not BankAccount.is_valid_amount(amount):
+            print("  ! Invalid deposit amount.")
             return
         self.balance += amount
         print(f"  + Deposited Rs.{amount} — New balance: Rs.{self.balance}")
 
     def withdraw(self, amount):
-        if amount <= 0:
-            print("  ! Amount must be greater than 0.")
+        if not BankAccount.is_valid_amount(amount):
+            print("  ! Invalid withdraw amount.")
             return
         if amount > self.balance:
             print(f"  ! Insufficient funds. Balance: Rs.{self.balance}")
@@ -34,40 +54,40 @@ class BankAccount:
         print(f"  - Withdrew Rs.{amount} — New balance: Rs.{self.balance}")
 
     def apply_interest(self):
-        # Uses self.interest_rate — checks instance first, then class
         interest = self.balance * self.interest_rate
         self.balance += interest
         print(f"  ~ Interest applied: Rs.{interest:.2f} — New balance: Rs.{self.balance:.2f}")
 
     def info(self):
-        return f"Owner: {self.owner} | Balance: Rs.{self.balance:.2f} | Rate: {self.interest_rate * 100}%"
+        return f"Owner: {self.owner} | Balance: Rs.{self.balance:.2f}"
 
 
 # ================================
 # TEST
 # ================================
 
+# Normal constructor
 acc1 = BankAccount("Kamal", 10000)
-acc2 = BankAccount("Nimal", 20000)
 
-print(f"Total accounts: {BankAccount.account_count}")   # 2
+# Alternative constructor — from a string
+acc2 = BankAccount.from_string("Nimal:20000")
+acc3 = BankAccount.from_string("Amal:5000")
 
-acc1.apply_interest()   # 3% on 10000 → Rs.300
-acc2.apply_interest()   # 3% on 20000 → Rs.600
+print(f"Total accounts: {BankAccount.account_count}")   # 3
+print(acc2.info())   # Owner: Nimal | Balance: Rs.20000
+
+# Static method — validate before doing anything
+print(BankAccount.is_valid_amount(500))    # True
+print(BankAccount.is_valid_amount(-100))   # False
+print(BankAccount.is_valid_amount("abc"))  # False
+
+acc1.deposit(5000)
+acc1.deposit(-50)    # rejected by is_valid_amount
+
+# Update rate for all accounts
+BankAccount.set_interest_rate(0.05)
+acc1.apply_interest()
+acc2.apply_interest()
 
 print(acc1.info())
 print(acc2.info())
-
-# Give acc1 a personal interest rate — doesn't affect acc2
-acc1.interest_rate = 0.05
-acc1.apply_interest()   # 5%
-acc2.apply_interest()   # still 3%
-
-print(acc1.info())
-print(acc2.info())
-
-# Update rate for everyone via the class
-BankAccount.interest_rate = 0.04
-print(f"\nNew global rate: {BankAccount.interest_rate}")
-print(f"acc1 rate: {acc1.interest_rate}")   # still 0.05 — has its own
-print(f"acc2 rate: {acc2.interest_rate}")   # 0.04 — uses class rate
