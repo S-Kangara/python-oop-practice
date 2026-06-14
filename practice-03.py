@@ -52,3 +52,14 @@ print(Employee.is_workday(my_date))   # True
 # @classmethod  from_string(cls, s) — "owner:balance" → BankAccount
 # @staticmethod is_valid_amount(amount) → True if amount > 0
 # TODO: Write it yourself!
+
+# I added this
+class BankAccount:
+    @classmethod
+    def from_string(cls, s):
+        owner, balance = s.split(':')
+        return cls(owner, int(balance))
+    
+    @staticmethod
+    def is_valid_amount(amount):
+        return amount > 0
