@@ -1,8 +1,7 @@
 # ================================
-# Topic 04 — Bank Account
+# Topic 05 — Bank Account
 # ================================
-# New concepts: inheritance, super(), method overriding
-# Added: SavingsAccount, CurrentAccount subclasses
+# New concepts: __repr__, __str__, __add__, __eq__, __gt__
 # ================================
 
 
@@ -30,7 +29,6 @@ class BankAccount:
             print("  ! Invalid deposit amount.")
             return
         self.balance += amount
-        print(f"  + Deposited Rs.{amount} — New balance: Rs.{self.balance:.2f}")
 
     def withdraw(self, amount):
         if not self.is_valid_amount(amount):
@@ -40,82 +38,102 @@ class BankAccount:
             print(f"  ! Insufficient funds. Balance: Rs.{self.balance:.2f}")
             return
         self.balance -= amount
-        print(f"  - Withdrew Rs.{amount} — New balance: Rs.{self.balance:.2f}")
 
     def apply_interest(self):
-        interest = self.balance * self.interest_rate
-        self.balance += interest
-        print(f"  ~ Interest Rs.{interest:.2f} applied — New balance: Rs.{self.balance:.2f}")
+        self.balance += self.balance * self.interest_rate
 
-    def info(self):
-        return f"[{self.__class__.__name__}] Owner: {self.owner} | Balance: Rs.{self.balance:.2f}"
+    # --- Dunder methods ---
 
+    def __repr__(self):
+        # For developers — recreates the object
+        return f"BankAccount('{self.owner}', {self.balance})"
 
-# ================================
-# SavingsAccount — higher interest, no overdraft
-# ================================
+    def __str__(self):
+        # For users — readable summary
+        return f"{self.owner}'s account — Balance: Rs.{self.balance:.2f}"
+
+    def __add__(self, other):
+        # acc1 + acc2 → combined balance (returns a number)
+        return self.balance + other.balance
+
+    def __eq__(self, other):
+        # acc1 == acc2 → same owner and balance?
+        return self.owner == other.owner and self.balance == other.balance
+
+    def __gt__(self, other):
+        # acc1 > acc2 → higher balance?
+        return self.balance > other.balance
+
+    def __lt__(self, other):
+        # acc1 < acc2 → lower balance?
+        return self.balance < other.balance
+
 
 class SavingsAccount(BankAccount):
+    interest_rate = 0.06
 
-    interest_rate = 0.06   # higher rate than base BankAccount
+    def __repr__(self):
+        return f"SavingsAccount('{self.owner}', {self.balance})"
 
-    def __init__(self, owner, balance=0):
-        super().__init__(owner, balance)   # parent handles owner, balance, account_count
+    def __str__(self):
+        return f"{self.owner}'s savings account — Balance: Rs.{self.balance:.2f} | Rate: 6%"
 
-
-# ================================
-# CurrentAccount — lower interest, allows overdraft
-# ================================
 
 class CurrentAccount(BankAccount):
-
     interest_rate   = 0.01
-    overdraft_limit = 10000   # can go negative up to this limit
+    overdraft_limit = 10000
 
     def __init__(self, owner, balance=0, overdraft_limit=10000):
         super().__init__(owner, balance)
         self.overdraft_limit = overdraft_limit
 
     def withdraw(self, amount):
-        # Override withdraw — allows going negative up to overdraft_limit
         if not self.is_valid_amount(amount):
             print("  ! Invalid withdraw amount.")
             return
         if amount > self.balance + self.overdraft_limit:
-            print(f"  ! Exceeds overdraft limit. Max withdraw: Rs.{self.balance + self.overdraft_limit:.2f}")
+            print(f"  ! Exceeds overdraft limit.")
             return
         self.balance -= amount
-        if self.balance < 0:
-            print(f"  - Withdrew Rs.{amount} — Overdraft: Rs.{self.balance:.2f}")
-        else:
-            print(f"  - Withdrew Rs.{amount} — New balance: Rs.{self.balance:.2f}")
+
+    def __repr__(self):
+        return f"CurrentAccount('{self.owner}', {self.balance}, overdraft_limit={self.overdraft_limit})"
+
+    def __str__(self):
+        return f"{self.owner}'s current account — Balance: Rs.{self.balance:.2f} | Overdraft: Rs.{self.overdraft_limit}"
 
 
 # ================================
 # TEST
 # ================================
 
-savings  = SavingsAccount("Kamal", 50000)
-current  = CurrentAccount("Nimal", 10000)
-base_acc = BankAccount("Amal", 10000)
+acc1    = BankAccount("Kamal", 50000)
+acc2    = BankAccount("Nimal", 30000)
+savings = SavingsAccount("Amal", 50000)
 
-print(f"Total accounts: {BankAccount.account_count}")   # 3
+# __repr__ and __str__
+print(repr(acc1))     # BankAccount('Kamal', 50000)
+print(str(acc1))      # Kamal's account — Balance: Rs.50000.00
+print(acc1)           # same as str — uses __str__
 
-# Different interest rates
-savings.apply_interest()    # 6%
-current.apply_interest()    # 1%
-base_acc.apply_interest()   # 3%
+print(repr(savings))
+print(savings)
 
-print(savings.info())
-print(current.info())
-print(base_acc.info())
+# __add__
+total = acc1 + acc2
+print(f"\nCombined balance: Rs.{total}")   # 80000
 
-# CurrentAccount overdraft
-current.withdraw(15000)   # goes into overdraft
-print(current.info())
-current.withdraw(6000)    # exceeds overdraft limit — rejected
+# __eq__
+acc3 = BankAccount("Kamal", 50000)
+print(acc1 == acc3)   # True — same owner and balance
+print(acc1 == acc2)   # False
 
-# isinstance checks
-print(isinstance(savings, SavingsAccount))   # True
-print(isinstance(savings, BankAccount))      # True — inherits
-print(issubclass(SavingsAccount, BankAccount))  # True
+# __gt__ and __lt__
+print(acc1 > acc2)    # True  — 50000 > 30000
+print(acc2 < acc1)    # True
+
+# Sort a list of accounts by balance using dunders
+accounts = [acc2, acc1, savings]
+accounts.sort(key=lambda a: a.balance)
+for a in accounts:
+    print(a)
